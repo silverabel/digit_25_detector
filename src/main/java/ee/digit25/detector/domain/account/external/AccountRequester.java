@@ -1,0 +1,24 @@
+package ee.digit25.detector.domain.account.external;
+
+import ee.bitweb.core.retrofit.RetrofitRequestExecutor;
+import ee.digit25.detector.domain.account.external.api.Account;
+import ee.digit25.detector.domain.account.external.api.AccountApi;
+import ee.digit25.detector.domain.account.external.api.AccountApiProperties;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AccountRequester {
+
+    private final AccountApi accountApi;
+    private final AccountApiProperties properties;
+
+    public Account get(String accountNumber) {
+        log.info("Requesting account {}", accountNumber);
+
+        return RetrofitRequestExecutor.executeRaw(accountApi.get(properties.getToken(), accountNumber));
+    }
+}
