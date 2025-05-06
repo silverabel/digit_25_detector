@@ -1,12 +1,18 @@
 package ee.digit25.detector.domain.device.external.api;
 
 import retrofit2.Call;
-import retrofit2.http.GET;
-import retrofit2.http.Header;
-import retrofit2.http.Path;
+import retrofit2.http.*;
+
+import java.util.List;
 
 public interface DeviceApi {
 
     @GET("/devices/{mac}")
     Call<Device> get(@Header("Authorization") String token, @Path("mac") String mac);
+
+    @POST("/devices/by-macs")
+    Call<List<Device>> get(@Header("Authorization") String token, @Body List<String> macs);
+
+    @GET("/devices")
+    Call<List<Device>> get(@Header("Authorization") String token, @Query("pageNumber") int pageNumber, @Query("pageSize") int pageSize);
 }
