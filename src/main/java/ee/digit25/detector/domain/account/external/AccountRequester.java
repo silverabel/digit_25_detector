@@ -8,17 +8,31 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountRequester {
 
-    private final AccountApi accountApi;
+    private final AccountApi api;
     private final AccountApiProperties properties;
 
     public Account get(String accountNumber) {
         log.info("Requesting account {}", accountNumber);
 
-        return RetrofitRequestExecutor.executeRaw(accountApi.get(properties.getToken(), accountNumber));
+        return RetrofitRequestExecutor.executeRaw(api.get(properties.getToken(), accountNumber));
+    }
+
+    public List<Account> get(List<String> numbers) {
+        log.info("Requesting accounts with numbers {}", numbers);
+
+        return RetrofitRequestExecutor.executeRaw(api.get(properties.getToken(), numbers));
+    }
+
+    public List<Account> get(int pageNumber, int pageSize) {
+        log.info("Requesting accounts page {} of size {}", pageNumber, pageSize);
+
+        return RetrofitRequestExecutor.executeRaw(api.get(properties.getToken(), pageNumber, pageSize));
     }
 }
