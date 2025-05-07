@@ -2,7 +2,8 @@
 
 Given component is resposible for verification of bank transactions.
 
-Github: [https://github.com/BitWeb/digit_25_detector](https://github.com/BitWeb/digit_25_detector)
+* Github: [https://github.com/BitWeb/digit_25_detector](https://github.com/BitWeb/digit_25_detector)
+* Dashboard: [https://dash.sandbox.bitw3b.eu/public-dashboards/0d1829f98adf4945bb5cec11a4e57a23](https://dash.sandbox.bitw3b.eu/public-dashboards/0d1829f98adf4945bb5cec11a4e57a23)
 
 ## Registering
 
@@ -11,7 +12,7 @@ Once you have  a team and a fork, you can register with the following CURL comma
 
 **DO NOT FORGET TO CHANGE NAME AND GITHUB REPOSITORY URL IN BODY**
 
-`curl -X POST 'http://localhost:8080/detectors' -H 'Content-Type: application/json' --data-raw '{"name": "<TEAM NAME>", "githubUrl": "<GITHUB FORK URL>"}'`
+`curl -X POST 'https://digit.sandbox.bitw3b.eu/detectors' -H 'Content-Type: application/json' --data-raw '{"name": "<TEAM NAME>", "githubUrl": "<GITHUB FORK URL>"}'`
 
 As a response you will get token. Put that token into src/main/java/resources/application.properties
 
@@ -32,3 +33,6 @@ You should be set to go. If you have issues, please feel free to ask for help.
 At 07.05.2025 21:00 evaluators will start going through registered teams and executing applications in an isolated environment.
 Evaluators will run a single instance of application and let it run for 3 minutes to get a baseline. 
 
+***Testing machine:***
+* 2 vCPU 
+* 8 GB ram
