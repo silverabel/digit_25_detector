@@ -1,26 +1,30 @@
 package ee.digit25.detector.domain.device;
 
 import ee.digit25.detector.domain.device.external.DeviceRequester;
+import ee.digit25.detector.domain.device.external.api.Device;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-@Slf4j
+import java.util.*;
+
+@Getter
 @Service
-@RequiredArgsConstructor
 public class DeviceValidator {
 
-    private final DeviceRequester requester;
+    private final Set<String> validDevices = new HashSet<>();
 
-    public boolean isValid(String mac) {
-        log.info("Validating device {}", mac);
+    DeviceValidator(DeviceRequester requester) {
+        int page = 0;
+        while (true) {
+            List<Device> devices = requester.get(page, 1000);
 
-        return !isBlacklisted(mac);
-    }
-
-    public boolean isBlacklisted(String mac) {
-        log.info("Starting to check if device is blacklisted");
-
-        return requester.get(mac).getIsBlacklisted();
+            if (!devices.isEmpty()) {
+                devices.stream().filter(device -> !device.getIsBlacklisted()).map(Device::getMac).forEach(validDevices::add);
+                page++;
+            } else {
+                break;
+            }
+        }
     }
 }

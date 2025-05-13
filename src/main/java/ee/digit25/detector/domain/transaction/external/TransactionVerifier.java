@@ -1,11 +1,13 @@
 package ee.digit25.detector.domain.transaction.external;
 
 import ee.bitweb.core.retrofit.RetrofitRequestExecutor;
+import ee.digit25.detector.domain.transaction.TransactionValidator;
 import ee.digit25.detector.domain.transaction.external.api.Transaction;
 import ee.digit25.detector.domain.transaction.external.api.TransactionApiProperties;
 import ee.digit25.detector.domain.transaction.external.api.TransactionsApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,28 +20,22 @@ public class TransactionVerifier {
     private final TransactionsApi api;
     private final TransactionApiProperties properties;
 
-    public void verify(Transaction transaction) {
-        log.info("Verifying transaction {}", transaction.getId());
-
-        RetrofitRequestExecutor.executeRaw(api.verify(properties.getToken(), transaction.getId()));
+    @Async
+    public void handle(TransactionValidator.Result result) {
+        RetrofitRequestExecutor.executeRaw(api.verify(properties.getToken(), result.getLegit()));
+        RetrofitRequestExecutor.executeRaw(api.reject(properties.getToken(), result.getRej()));
     }
 
-    public void reject(Transaction transaction) {
-        log.info("Rejecting transaction {}", transaction.getId());
-
-        RetrofitRequestExecutor.executeRaw(api.reject(properties.getToken(), transaction.getId()));
-    }
-
-    public void verify(List<Transaction> transactions) {
-        List<String> ids = transactions.stream().map(Transaction::getId).toList();
-        log.info("Verifying transactions {}", ids);
+//    @Async
+    public void verify(List<String> ids) {
+//        log.info("Verifying transactions {}", ids);
 
         RetrofitRequestExecutor.executeRaw(api.verify(properties.getToken(), ids));
     }
 
-    public void reject(List<Transaction> transactions) {
-        List<String> ids = transactions.stream().map(Transaction::getId).toList();
-        log.info("Rejecting transactions {}", ids);
+//    @Async
+    public void reject(List<String> ids) {
+//        log.info("Rejecting transactions {}", ids);
 
         RetrofitRequestExecutor.executeRaw(api.reject(properties.getToken(), ids));
     }

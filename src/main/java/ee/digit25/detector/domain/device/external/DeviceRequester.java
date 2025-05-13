@@ -31,7 +31,7 @@ public class DeviceRequester {
     }
 
     public List<Device> get(int pageNumber, int pageSize) {
-        log.info("Requesting persons page {} of size {}", pageNumber, pageSize);
+        log.info("Requesting devices page {} of size {}", pageNumber, pageSize);
 
         return RetrofitRequestExecutor.executeRaw(api.get(properties.getToken(), pageNumber, pageSize));
     }

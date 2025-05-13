@@ -4,11 +4,14 @@ import ee.digit25.detector.domain.transaction.TransactionValidator;
 import ee.digit25.detector.domain.transaction.external.TransactionRequester;
 import ee.digit25.detector.domain.transaction.external.TransactionVerifier;
 import ee.digit25.detector.domain.transaction.external.api.Transaction;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -16,25 +19,54 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Processor {
 
-    private final int TRANSACTION_BATCH_SIZE = 10;
-    private final TransactionRequester requester;
-    private final TransactionValidator validator;
-    private final TransactionVerifier verifier;
+    private final Task task;
 
-    @Scheduled(fixedDelay = 1000) //Runs every 1000 ms after the last run
-    public void process() {
-        log.info("Starting to process a batch of transactions of size {}", TRANSACTION_BATCH_SIZE);
+    @PostConstruct
+    public void postConstruct() {
+        for (int i = 0; i < 8; i++) {
+            task.execute(i);
+        }
+    }
 
-        List<Transaction> transactions = requester.getUnverified(TRANSACTION_BATCH_SIZE);
+    @Service
+    @RequiredArgsConstructor
+    public static class Task {
 
-        for (Transaction transaction : transactions) {
-            if (validator.isLegitimate(transaction)) {
-                log.info("Legitimate transaction {}", transaction.getId());
-                verifier.verify(transaction);
-            } else {
-                log.info("Not legitimate transaction {}", transaction.getId());
-                verifier.reject(transaction);
+        private final TransactionRequester requester;
+        private final TransactionValidator validator;
+        private final TransactionVerifier verifier;
+        private static Timer timer = new Timer();
+
+        @Async
+        public void execute(int i) {
+            while (true) {
+                try {
+                    List<Transaction> transactions = requester.getUnverified(1000);
+                    TransactionValidator.Result result = validator.isLegitimate(transactions);
+                    verifier.verify(result.getLegit());
+                    verifier.reject(result.getRej());
+
+                    timer.count++;
+
+                    if (i == 0) {
+                        log.info(String.valueOf(1000000 * timer.count / ChronoUnit.MILLIS.between(timer.start, LocalTime.now())));
+                        timer.count2++;
+
+                        if (timer.count2 % 100 == 0) {
+                            timer = new Timer();
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
+    }
+
+    public static class Timer {
+
+        private long count;
+        private long count2;
+        private LocalTime start = LocalTime.now();
     }
 }
