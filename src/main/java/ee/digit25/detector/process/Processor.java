@@ -7,66 +7,47 @@ import ee.digit25.detector.domain.transaction.external.api.Transaction;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class Processor {
 
-    private final Task task;
+    private final TransactionRequester requester;
+    private final TransactionValidator validator;
+    private final TransactionVerifier verifier;
+    private final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
 
     @PostConstruct
-    public void postConstruct() {
-        for (int i = 0; i < 5; i++) {
-            task.execute(i);
+    public void execute() {
+        while (true) {
+            LocalTime now = LocalTime.now();
+            List<CompletableFuture<List<Transaction>>> futures = IntStream.range(0, 10)
+                    .mapToObj(i -> CompletableFuture.supplyAsync(() -> requester.getUnverified(1000), executor))
+                    .toList();
+
+            List<Transaction> transactions = futures.stream().map(CompletableFuture::join).flatMap(Collection::stream).toList();
+            TransactionValidator.Result result = validator.isLegitimate(transactions);
+
+            CompletableFuture.allOf(
+                    CompletableFuture.runAsync(() -> verifier.verify(result.getLegit()), executor),
+                    CompletableFuture.runAsync(() -> verifier.reject(result.getRej()), executor)
+            ).join();
+
+            log.info(String.valueOf(ChronoUnit.MILLIS.between(now, LocalTime.now())));
         }
-    }
-
-    @Service
-    @RequiredArgsConstructor
-    public static class Task {
-
-        private final TransactionRequester requester;
-        private final TransactionValidator validator;
-        private final TransactionVerifier verifier;
-        private static Timer timer = new Timer();
-
-        @Async
-        public void execute(int i) {
-            while (true) {
-                try {
-                    List<Transaction> transactions = requester.getUnverified(1000);
-                    TransactionValidator.Result result = validator.isLegitimate(transactions);
-                    verifier.verify(result.getLegit());
-                    verifier.reject(result.getRej());
-
-                    timer.count++;
-
-                    if (i == 0) {
-                        log.info(String.valueOf(1000000 * timer.count / ChronoUnit.MILLIS.between(timer.start, LocalTime.now())));
-                        timer.count2++;
-
-                        if (timer.count2 % 100 == 0) {
-                            timer = new Timer();
-                        }
-                    }
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    public static class Timer {
-
-        private long count;
-        private long count2;
-        private LocalTime start = LocalTime.now();
     }
 }
