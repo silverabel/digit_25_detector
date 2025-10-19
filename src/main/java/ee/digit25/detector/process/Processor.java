@@ -23,7 +23,7 @@ public class Processor {
 
     @PostConstruct
     public void postConstruct() {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 5; i++) {
             task.execute(i);
         }
     }
